@@ -9,10 +9,13 @@ import {
   createSpotifyPlayer,
   fetchTrackDetails,
   getValidAccessToken,
+  getPlaybackDevices,
   handleSpotifyAuthCallback,
   hasSpotifyConfig,
   pausePlayback,
   playTrackOnActiveDevice,
+  playTrackOnDevice,
+  transferPlaybackToDevice,
   transferAndPlayTrack,
 } from './spotify';
 import './App.css';
@@ -299,7 +302,29 @@ export default function App() {
       // Mobile browsers are often unreliable/unsupported for the Web Playback SDK.
       // Prefer controlling the user's active device (Spotify app) via Web API.
       if (isMobileDevice) {
-        await playTrackOnActiveDevice({ trackUri: SPOTIFY_TRACK_URI });
+        try {
+          await playTrackOnActiveDevice({ trackUri: SPOTIFY_TRACK_URI });
+        } catch (error) {
+          // If there is no active device yet (common right after auth), poll for devices
+          // and start playback on the first available phone/computer.
+          const status = error?.status;
+          if (status !== 404) throw error;
+
+          const started = Date.now();
+          let devices = [];
+          while (Date.now() - started < 9000) {
+            devices = await getPlaybackDevices();
+            if (devices.length) break;
+            await new Promise((r) => window.setTimeout(r, 450));
+          }
+
+          const preferred = devices.find((d) => d?.is_active) || devices[0];
+          if (!preferred?.id) throw error;
+
+          await transferPlaybackToDevice({ deviceId: preferred.id, play: false });
+          await new Promise((r) => window.setTimeout(r, 220));
+          await playTrackOnDevice({ deviceId: preferred.id, trackUri: SPOTIFY_TRACK_URI });
+        }
       } else {
         const player = await ensureSpotifyPlayer();
 
@@ -348,7 +373,7 @@ export default function App() {
         window.sessionStorage.setItem(MOBILE_SPOTIFY_RETURN_RETRY_KEY, '1');
         updateSpotifyUi({
           status: 'blocked',
-          message: 'Otevři Spotify aplikaci (tlačítko níže), pusť cokoliv na 1 vteřinu a vrať se sem. Hudbu zkusím spustit znovu automaticky.',
+          message: 'Otevři Spotify aplikaci (tlačítko níže). Pokud je potřeba, pusť tam cokoliv na 1 vteřinu a vrať se sem. Hudbu zkusím spustit znovu automaticky.',
           needsTap: true,
           showLogin: false,
           showOpenSpotify: true,

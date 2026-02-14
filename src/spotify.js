@@ -430,6 +430,37 @@ export async function playTrackOnActiveDevice({ trackUri }) {
   });
 }
 
+export async function getPlaybackDevices() {
+  const payload = await spotifyApi('/me/player/devices', { method: 'GET', expectJson: true });
+  if (!payload || !Array.isArray(payload.devices)) return [];
+  return payload.devices;
+}
+
+export async function transferPlaybackToDevice({ deviceId, play = false }) {
+  if (!deviceId) {
+    throw makeError('Missing device id', 'DEVICE_NOT_READY');
+  }
+
+  await spotifyApi('/me/player', {
+    method: 'PUT',
+    body: { device_ids: [deviceId], play: Boolean(play) },
+  });
+}
+
+export async function playTrackOnDevice({ deviceId, trackUri }) {
+  if (!deviceId) {
+    throw makeError('Missing device id', 'DEVICE_NOT_READY');
+  }
+  if (!trackUri) {
+    throw makeError('Missing track uri', 'MISSING_TRACK_URI');
+  }
+
+  await spotifyApi(`/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+    method: 'PUT',
+    body: { uris: [trackUri] },
+  });
+}
+
 export async function pausePlayback({ deviceId } = {}) {
   const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
   await spotifyApi(`/me/player/pause${query}`, { method: 'PUT' });
