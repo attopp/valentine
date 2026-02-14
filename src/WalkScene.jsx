@@ -451,7 +451,7 @@ export default function WalkScene({ spotify }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          ❤️
+          <HeartIcon className="walk-heart-icon" color="#e74c3c" size={64} />
         </Motion.h1>
         <Motion.p
           initial={{ opacity: 0, y: 15 }}

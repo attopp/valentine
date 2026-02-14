@@ -234,6 +234,14 @@
   text-shadow: 0 2px 20px rgba(0,0,0,0.5), 0 0 40px rgba(255,234,167,0.15);
 }
 
+.walk-heart-icon {
+  display: block;
+  margin: 0 auto;
+  width: clamp(2.4rem, 6vw, 3.6rem);
+  height: auto;
+  filter: drop-shadow(0 6px 18px rgba(0,0,0,0.45));
+}
+
 .walk-text p {
   font-size: clamp(0.95rem, 2.5vw, 1.25rem);
   color: #fab1a0;
