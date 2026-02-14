@@ -417,6 +417,19 @@ export async function transferAndPlayTrack({ deviceId, trackUri }) {
   });
 }
 
+export async function playTrackOnActiveDevice({ trackUri }) {
+  if (!trackUri) {
+    throw makeError('Missing track uri', 'MISSING_TRACK_URI');
+  }
+
+  // If the user already has an active device (typically the Spotify mobile app),
+  // this starts playback there without needing the Web Playback SDK.
+  await spotifyApi('/me/player/play', {
+    method: 'PUT',
+    body: { uris: [trackUri] },
+  });
+}
+
 export async function pausePlayback({ deviceId } = {}) {
   const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
   await spotifyApi(`/me/player/pause${query}`, { method: 'PUT' });

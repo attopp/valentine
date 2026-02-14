@@ -12,6 +12,7 @@ import {
   handleSpotifyAuthCallback,
   hasSpotifyConfig,
   pausePlayback,
+  playTrackOnActiveDevice,
   transferAndPlayTrack,
 } from './spotify';
 import './App.css';
@@ -156,6 +157,7 @@ export default function App() {
       : 'Spotify v této verzi není nastavené.',
     needsTap: false,
     showLogin: false,
+    showOpenSpotify: false,
   }));
   const [trackInfo, setTrackInfo] = useState(DEFAULT_TRACK_INFO);
 
@@ -290,24 +292,32 @@ export default function App() {
         message: 'Spouštím přehrávání Spotify...',
         needsTap: false,
         showLogin: false,
+        showOpenSpotify: false,
       });
 
-      const player = await ensureSpotifyPlayer();
+      // Mobile browsers are often unreliable/unsupported for the Web Playback SDK.
+      // Prefer controlling the user's active device (Spotify app) via Web API.
+      if (isMobileDevice) {
+        await playTrackOnActiveDevice({ trackUri: SPOTIFY_TRACK_URI });
+      } else {
+        const player = await ensureSpotifyPlayer();
 
-      if (fromUserGesture && typeof player.activateElement === 'function') {
-        await player.activateElement();
+        if (fromUserGesture && typeof player.activateElement === 'function') {
+          await player.activateElement();
+        }
+
+        const deviceId = await waitForSpotifyDevice();
+        await transferAndPlayTrack({ deviceId, trackUri: SPOTIFY_TRACK_URI });
       }
-
-      const deviceId = await waitForSpotifyDevice();
-      await transferAndPlayTrack({ deviceId, trackUri: SPOTIFY_TRACK_URI });
 
       window.sessionStorage.removeItem(PENDING_SPOTIFY_KEY);
 
       updateSpotifyUi({
         status: 'playing',
-        message: 'Přehrávám Olivia Dean na Spotify.',
+        message: isMobileDevice ? 'Přehrávám ve Spotify aplikaci.' : 'Přehrávám Olivia Dean na Spotify.',
         needsTap: false,
         showLogin: false,
+        showOpenSpotify: false,
       });
     } catch (error) {
       if (error?.code === 'AUTH_REQUIRED') {
@@ -316,6 +326,7 @@ export default function App() {
           message: 'Pro přehrání celé skladby připoj Spotify.',
           needsTap: false,
           showLogin: true,
+          showOpenSpotify: false,
         });
         throw error;
       }
@@ -326,6 +337,19 @@ export default function App() {
           message: 'Pro přehrání celé skladby je potřeba Spotify Premium.',
           needsTap: false,
           showLogin: false,
+          showOpenSpotify: false,
+        });
+        throw error;
+      }
+
+      // Common on mobile: no active device selected (user hasn't opened Spotify app yet).
+      if (isMobileDevice) {
+        updateSpotifyUi({
+          status: 'blocked',
+          message: 'Otevři Spotify aplikaci a spusť libovolnou skladbu. Pak se vrať a klepni na „Klepni pro spuštění hudby“.',
+          needsTap: true,
+          showLogin: false,
+          showOpenSpotify: true,
         });
         throw error;
       }
@@ -335,10 +359,11 @@ export default function App() {
         message: error?.message || 'Přehrávání bylo zablokováno. Klepni níže pro spuštění hudby.',
         needsTap: true,
         showLogin: false,
+        showOpenSpotify: false,
       });
       throw error;
     }
-  }, [ensureSpotifyPlayer, spotifyEnabled, updateSpotifyUi, waitForSpotifyDevice]);
+  }, [ensureSpotifyPlayer, isMobileDevice, spotifyEnabled, updateSpotifyUi, waitForSpotifyDevice]);
 
   useEffect(() => {
     if (!spotifyEnabled) return undefined;
@@ -451,6 +476,26 @@ export default function App() {
     void startSpotifyPlayback({ fromUserGesture: true });
   };
 
+  const handleOpenSpotifyApp = () => {
+    // Best-effort deep link to the Spotify app, with web fallback.
+    const deepLink = SPOTIFY_TRACK_URI;
+    const webLink = `https://open.spotify.com/track/${SPOTIFY_TRACK_ID}`;
+
+    try {
+      window.location.assign(deepLink);
+    } catch {
+      // ignore
+    }
+
+    window.setTimeout(() => {
+      try {
+        window.location.assign(webLink);
+      } catch {
+        // ignore
+      }
+    }, 700);
+  };
+
   const handleStopMusic = () => {
     void (async () => {
       try {
@@ -472,6 +517,7 @@ export default function App() {
         message: 'Hudba pozastavená.',
         needsTap: true,
         showLogin: false,
+        showOpenSpotify: false,
       });
     })();
   };
@@ -510,8 +556,10 @@ export default function App() {
                 authHint: mobileAuthHint,
                 needsTap: spotifyUi.needsTap,
                 showLogin: spotifyUi.showLogin,
+                showOpenSpotify: spotifyUi.showOpenSpotify,
                 onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,
                 onLogin: spotifyEnabled ? handleConnectSpotify : undefined,
+                onOpenSpotify: spotifyEnabled ? handleOpenSpotifyApp : undefined,
                 onStop: spotifyEnabled ? handleStopMusic : undefined,
                 canStop: spotifyUi.status === 'playing',
                 track: trackInfo,
