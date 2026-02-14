@@ -451,15 +451,15 @@ export default function WalkScene({ spotify }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          Jupí!!
+          ❤️
         </Motion.h1>
         <Motion.p
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.5, duration: 1.2 }}
         >
-          Věděl jsem, že řekneš ano!<br />
-          Pojďme jít životem spolu - jen ty a já, napořád.
+          Ty a já na cestě za dobrodružstvím<br />
+          Love u
         </Motion.p>
       </div>
 
