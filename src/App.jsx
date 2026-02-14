@@ -7,6 +7,7 @@ import WalkScene from './WalkScene';
 import {
   beginSpotifyAuthorization,
   createSpotifyPlayer,
+  fetchTrackDetails,
   getValidAccessToken,
   handleSpotifyAuthCallback,
   hasSpotifyConfig,
@@ -21,8 +22,15 @@ const NO_TEXTS = [
 ];
 
 const BURST_COLORS = ['#e74c3c', '#ff6b81', '#c0392b', '#e84393', '#fd79a8'];
+const SPOTIFY_TRACK_ID = '7gKxCvTDWwV9wBhdeBbr3l';
 const SPOTIFY_TRACK_URI = 'spotify:track:7gKxCvTDWwV9wBhdeBbr3l';
 const PENDING_SPOTIFY_KEY = 'valentine_pending_spotify_play';
+const DEFAULT_TRACK_INFO = {
+  name: 'Nice To Each Other',
+  artist: 'Olivia Dean',
+  album: '',
+  image: '',
+};
 
 function HeartBurst() {
   const hearts = useMemo(() =>
@@ -139,6 +147,7 @@ export default function App() {
     needsTap: false,
     showLogin: false,
   }));
+  const [trackInfo, setTrackInfo] = useState(DEFAULT_TRACK_INFO);
 
   const switchTimeoutRef = useRef(null);
   const spotifyPlayerRef = useRef(null);
@@ -147,6 +156,24 @@ export default function App() {
   const updateSpotifyUi = useCallback((patch) => {
     setSpotifyUi(prev => ({ ...prev, ...patch }));
   }, []);
+
+  const loadSpotifyTrackInfo = useCallback(async () => {
+    if (!spotifyEnabled) return;
+
+    try {
+      const details = await fetchTrackDetails(SPOTIFY_TRACK_ID);
+      if (!details) return;
+
+      setTrackInfo({
+        name: details.name || DEFAULT_TRACK_INFO.name,
+        artist: details.artist || DEFAULT_TRACK_INFO.artist,
+        album: details.album || '',
+        image: details.image || '',
+      });
+    } catch {
+      // Keep fallback static text if metadata fetch fails.
+    }
+  }, [spotifyEnabled]);
 
   const waitForSpotifyDevice = useCallback(async () => {
     if (spotifyDeviceIdRef.current) {
@@ -343,6 +370,7 @@ export default function App() {
         message: 'Spotify connected.',
         showLogin: false,
       });
+      void loadSpotifyTrackInfo();
 
       if (!hasPendingPlay) return;
 
@@ -368,7 +396,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [spotifyEnabled, startSpotifyPlayback, updateSpotifyUi]);
+  }, [loadSpotifyTrackInfo, spotifyEnabled, startSpotifyPlayback, updateSpotifyUi]);
 
   useEffect(() => {
     return () => {
@@ -382,7 +410,7 @@ export default function App() {
     };
   }, []);
 
-  const handleYes = () => {
+  const handleYes = useCallback(() => {
     setBurst(true);
     switchTimeoutRef.current = setTimeout(() => setSaid(true), 700);
 
@@ -397,6 +425,8 @@ export default function App() {
         return;
       }
 
+      void loadSpotifyTrackInfo();
+
       try {
         await startSpotifyPlayback({ fromUserGesture: true });
       } catch (error) {
@@ -405,7 +435,7 @@ export default function App() {
         }
       }
     })();
-  };
+  }, [loadSpotifyTrackInfo, requestSpotifyLogin, spotifyEnabled, startSpotifyPlayback]);
 
   const handleTapToStartMusic = () => {
     void startSpotifyPlayback({ fromUserGesture: true });
@@ -446,6 +476,7 @@ export default function App() {
                 showLogin: spotifyUi.showLogin,
                 onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,
                 onLogin: spotifyEnabled ? handleConnectSpotify : undefined,
+                track: trackInfo,
               }}
             />
           </Motion.div>

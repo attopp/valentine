@@ -430,8 +430,24 @@ export default function WalkScene({ spotify }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 2.8, duration: 1.1 }}
       >
-        <p className="spotify-label">Olivia Dean - Nice To Each Other</p>
+        <p className="spotify-label">Spotify</p>
         <div className="spotify-card">
+          <div className="spotify-track-head">
+            {spotify?.track?.image ? (
+              <img
+                className="spotify-track-art"
+                src={spotify.track.image}
+                alt={`${spotify.track.name || 'Track'} cover`}
+              />
+            ) : (
+              <div className="spotify-track-art spotify-track-art--fallback" />
+            )}
+            <div className="spotify-track-meta">
+              <p className="spotify-track-name">{spotify?.track?.name || 'Nice To Each Other'}</p>
+              <p className="spotify-track-artist">{spotify?.track?.artist || 'Olivia Dean'}</p>
+            </div>
+          </div>
+
           <p className="spotify-status">{spotify?.message || 'Connect Spotify to start music.'}</p>
 
           {spotify?.showLogin && (

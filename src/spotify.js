@@ -364,7 +364,7 @@ export async function createSpotifyPlayer({ onReady, onNotReady, onAutoplayFaile
   return player;
 }
 
-async function spotifyApi(path, { method = 'GET', body } = {}) {
+async function spotifyApi(path, { method = 'GET', body, expectJson = false } = {}) {
   const accessToken = await getValidAccessToken();
   if (!accessToken) {
     throw makeError('Spotify login required', 'AUTH_REQUIRED');
@@ -379,8 +379,13 @@ async function spotifyApi(path, { method = 'GET', body } = {}) {
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
 
-  if (response.ok || response.status === 204) {
+  if (response.status === 204) {
     return null;
+  }
+
+  if (response.ok) {
+    if (!expectJson) return null;
+    return response.json();
   }
 
   const message = await readResponseError(response);
@@ -410,4 +415,20 @@ export async function transferAndPlayTrack({ deviceId, trackUri }) {
     method: 'PUT',
     body: { uris: [trackUri] },
   });
+}
+
+export async function fetchTrackDetails(trackId) {
+  const payload = await spotifyApi(`/tracks/${encodeURIComponent(trackId)}`, {
+    method: 'GET',
+    expectJson: true,
+  });
+
+  if (!payload) return null;
+
+  return {
+    name: payload.name || '',
+    artist: Array.isArray(payload.artists) ? payload.artists.map((a) => a.name).filter(Boolean).join(', ') : '',
+    album: payload.album?.name || '',
+    image: payload.album?.images?.[2]?.url || payload.album?.images?.[1]?.url || payload.album?.images?.[0]?.url || '',
+  };
 }
