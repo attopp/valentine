@@ -2,8 +2,6 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion as Motion, AnimatePresence } from 'framer-motion';
 import { PenguinIcon, HeartIcon } from './Icons';
 
-const SPOTIFY_TRACK_ID = '7gKxCvTDWwV9wBhdeBbr3l'; // Olivia Dean - Nice To Each Other
-
 /*
   Timeline:
   0.6s  – SVG penguins walk in from sides (front view)
@@ -263,7 +261,7 @@ function HeavySnow() {
   );
 }
 
-export default function WalkScene() {
+export default function WalkScene({ spotify }) {
   const [stage, setStage] = useState(0);
   const [footprints, setFootprints] = useState([]);
   const [showCouple, setShowCouple] = useState(false);
@@ -433,13 +431,29 @@ export default function WalkScene() {
         transition={{ delay: 2.8, duration: 1.1 }}
       >
         <p className="spotify-label">Olivia Dean - Nice To Each Other</p>
-        <iframe
-          title="Spotify: Nice To Each Other"
-          className="spotify-embed"
-          src={`https://open.spotify.com/embed/track/${SPOTIFY_TRACK_ID}?utm_source=generator&theme=0`}
-          loading="lazy"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-        />
+        <div className="spotify-card">
+          <p className="spotify-status">{spotify?.message || 'Connect Spotify to start music.'}</p>
+
+          {spotify?.showLogin && (
+            <button
+              type="button"
+              className="spotify-action-btn"
+              onClick={spotify.onLogin}
+            >
+              Connect Spotify
+            </button>
+          )}
+
+          {spotify?.needsTap && (
+            <button
+              type="button"
+              className="spotify-action-btn"
+              onClick={spotify.onTapStart}
+            >
+              Tap to start music
+            </button>
+          )}
+        </div>
       </Motion.div>
     </div>
   );

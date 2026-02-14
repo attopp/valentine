@@ -4,6 +4,14 @@ import { PenguinIcon, HeartIcon } from './Icons';
 import FloatingHearts from './FloatingHearts';
 import Snow from './Snow';
 import WalkScene from './WalkScene';
+import {
+  beginSpotifyAuthorization,
+  createSpotifyPlayer,
+  getValidAccessToken,
+  handleSpotifyAuthCallback,
+  hasSpotifyConfig,
+  transferAndPlayTrack,
+} from './spotify';
 import './App.css';
 
 const NO_TEXTS = [
@@ -13,6 +21,8 @@ const NO_TEXTS = [
 ];
 
 const BURST_COLORS = ['#e74c3c', '#ff6b81', '#c0392b', '#e84393', '#fd79a8'];
+const SPOTIFY_TRACK_URI = 'spotify:track:7gKxCvTDWwV9wBhdeBbr3l';
+const PENDING_SPOTIFY_KEY = 'valentine_pending_spotify_play';
 
 function HeartBurst() {
   const hearts = useMemo(() =>
@@ -119,12 +129,255 @@ function AskScene({ onYes }) {
 export default function App() {
   const [said, setSaid] = useState(false);
   const [burst, setBurst] = useState(false);
+
+  const spotifyEnabled = hasSpotifyConfig();
+  const [spotifyUi, setSpotifyUi] = useState(() => ({
+    status: spotifyEnabled ? 'idle' : 'missing_config',
+    message: spotifyEnabled
+      ? 'Music will start when you click Yes.'
+      : 'Spotify is not configured for this build.',
+    needsTap: false,
+    showLogin: false,
+  }));
+
   const switchTimeoutRef = useRef(null);
+  const spotifyPlayerRef = useRef(null);
+  const spotifyDeviceIdRef = useRef('');
+
+  const updateSpotifyUi = useCallback((patch) => {
+    setSpotifyUi(prev => ({ ...prev, ...patch }));
+  }, []);
+
+  const waitForSpotifyDevice = useCallback(async () => {
+    if (spotifyDeviceIdRef.current) {
+      return spotifyDeviceIdRef.current;
+    }
+
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const timerId = window.setInterval(() => {
+        if (spotifyDeviceIdRef.current) {
+          window.clearInterval(timerId);
+          resolve(spotifyDeviceIdRef.current);
+          return;
+        }
+
+        if (Date.now() - started > 8000) {
+          window.clearInterval(timerId);
+          reject(new Error('Timed out waiting for Spotify player device.'));
+        }
+      }, 120);
+    });
+  }, []);
+
+  const ensureSpotifyPlayer = useCallback(async () => {
+    if (spotifyPlayerRef.current) {
+      return spotifyPlayerRef.current;
+    }
+
+    updateSpotifyUi({
+      status: 'connecting',
+      message: 'Connecting Spotify player...',
+      needsTap: false,
+      showLogin: false,
+    });
+
+    const player = await createSpotifyPlayer({
+      onReady: (deviceId) => {
+        spotifyDeviceIdRef.current = deviceId;
+        updateSpotifyUi({
+          status: 'ready',
+          message: 'Spotify player is ready.',
+          showLogin: false,
+        });
+      },
+      onNotReady: () => {
+        spotifyDeviceIdRef.current = '';
+        updateSpotifyUi({
+          status: 'connecting',
+          message: 'Reconnecting Spotify player...',
+        });
+      },
+      onAutoplayFailed: () => {
+        updateSpotifyUi({
+          status: 'blocked',
+          message: 'Playback was blocked. Tap below to start music.',
+          needsTap: true,
+        });
+      },
+      onError: (message) => {
+        if (/auth/i.test(message)) {
+          updateSpotifyUi({
+            status: 'needs_login',
+            message: 'Spotify login expired. Connect again to continue.',
+            showLogin: true,
+            needsTap: false,
+          });
+          return;
+        }
+
+        updateSpotifyUi({
+          status: 'error',
+          message: message || 'Spotify playback failed.',
+          needsTap: true,
+          showLogin: false,
+        });
+      },
+    });
+
+    spotifyPlayerRef.current = player;
+    return player;
+  }, [updateSpotifyUi]);
+
+  const requestSpotifyLogin = useCallback(async () => {
+    if (!spotifyEnabled) return;
+
+    window.sessionStorage.setItem(PENDING_SPOTIFY_KEY, '1');
+
+    updateSpotifyUi({
+      status: 'authorizing',
+      message: 'Opening Spotify login...',
+      needsTap: false,
+      showLogin: false,
+    });
+
+    await beginSpotifyAuthorization();
+  }, [spotifyEnabled, updateSpotifyUi]);
+
+  const startSpotifyPlayback = useCallback(async ({ fromUserGesture }) => {
+    if (!spotifyEnabled) return;
+
+    try {
+      updateSpotifyUi({
+        status: 'connecting',
+        message: 'Starting Spotify playback...',
+        needsTap: false,
+        showLogin: false,
+      });
+
+      const player = await ensureSpotifyPlayer();
+
+      if (fromUserGesture && typeof player.activateElement === 'function') {
+        await player.activateElement();
+      }
+
+      const deviceId = await waitForSpotifyDevice();
+      await transferAndPlayTrack({ deviceId, trackUri: SPOTIFY_TRACK_URI });
+
+      window.sessionStorage.removeItem(PENDING_SPOTIFY_KEY);
+
+      updateSpotifyUi({
+        status: 'playing',
+        message: 'Playing Olivia Dean on Spotify.',
+        needsTap: false,
+        showLogin: false,
+      });
+    } catch (error) {
+      if (error?.code === 'AUTH_REQUIRED') {
+        updateSpotifyUi({
+          status: 'needs_login',
+          message: 'Connect Spotify to play the full track.',
+          needsTap: false,
+          showLogin: true,
+        });
+        throw error;
+      }
+
+      if (error?.code === 'PREMIUM_REQUIRED') {
+        updateSpotifyUi({
+          status: 'error',
+          message: 'Spotify Premium is required for full-song playback.',
+          needsTap: false,
+          showLogin: false,
+        });
+        throw error;
+      }
+
+      updateSpotifyUi({
+        status: 'blocked',
+        message: error?.message || 'Playback was blocked. Tap below to start music.',
+        needsTap: true,
+        showLogin: false,
+      });
+      throw error;
+    }
+  }, [ensureSpotifyPlayer, spotifyEnabled, updateSpotifyUi, waitForSpotifyDevice]);
+
+  useEffect(() => {
+    if (!spotifyEnabled) return undefined;
+
+    let cancelled = false;
+
+    const bootstrapSpotify = async () => {
+      const authResult = await handleSpotifyAuthCallback();
+      if (cancelled) return;
+
+      if (authResult.error) {
+        window.sessionStorage.removeItem(PENDING_SPOTIFY_KEY);
+        updateSpotifyUi({
+          status: 'error',
+          message: authResult.error.message,
+          showLogin: true,
+          needsTap: false,
+        });
+        return;
+      }
+
+      const token = await getValidAccessToken();
+      const hasPendingPlay = window.sessionStorage.getItem(PENDING_SPOTIFY_KEY) === '1';
+
+      if (!token) {
+        if (hasPendingPlay) {
+          updateSpotifyUi({
+            status: 'needs_login',
+            message: 'Connect Spotify to continue playback.',
+            showLogin: true,
+            needsTap: false,
+          });
+        }
+        return;
+      }
+
+      updateSpotifyUi({
+        status: 'authorized',
+        message: 'Spotify connected.',
+        showLogin: false,
+      });
+
+      if (!hasPendingPlay) return;
+
+      setBurst(true);
+      setSaid(true);
+
+      try {
+        await startSpotifyPlayback({ fromUserGesture: false });
+      } catch (error) {
+        if (error?.code === 'AUTH_REQUIRED') {
+          updateSpotifyUi({
+            status: 'needs_login',
+            message: 'Connect Spotify again to continue.',
+            showLogin: true,
+            needsTap: false,
+          });
+        }
+      }
+    };
+
+    void bootstrapSpotify();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [spotifyEnabled, startSpotifyPlayback, updateSpotifyUi]);
 
   useEffect(() => {
     return () => {
       if (switchTimeoutRef.current) {
         clearTimeout(switchTimeoutRef.current);
+      }
+
+      if (spotifyPlayerRef.current) {
+        spotifyPlayerRef.current.disconnect();
       }
     };
   }, []);
@@ -132,6 +385,34 @@ export default function App() {
   const handleYes = () => {
     setBurst(true);
     switchTimeoutRef.current = setTimeout(() => setSaid(true), 700);
+
+    if (!spotifyEnabled) return;
+
+    window.sessionStorage.setItem(PENDING_SPOTIFY_KEY, '1');
+
+    void (async () => {
+      const token = await getValidAccessToken();
+      if (!token) {
+        await requestSpotifyLogin();
+        return;
+      }
+
+      try {
+        await startSpotifyPlayback({ fromUserGesture: true });
+      } catch (error) {
+        if (error?.code === 'AUTH_REQUIRED') {
+          await requestSpotifyLogin();
+        }
+      }
+    })();
+  };
+
+  const handleTapToStartMusic = () => {
+    void startSpotifyPlayback({ fromUserGesture: true });
+  };
+
+  const handleConnectSpotify = () => {
+    void requestSpotifyLogin();
   };
 
   return (
@@ -157,7 +438,16 @@ export default function App() {
             transition={{ duration: 1.2 }}
             style={{ position: 'fixed', inset: 0 }}
           >
-            <WalkScene />
+            <WalkScene
+              spotify={{
+                status: spotifyUi.status,
+                message: spotifyUi.message,
+                needsTap: spotifyUi.needsTap,
+                showLogin: spotifyUi.showLogin,
+                onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,
+                onLogin: spotifyEnabled ? handleConnectSpotify : undefined,
+              }}
+            />
           </Motion.div>
         )}
       </AnimatePresence>

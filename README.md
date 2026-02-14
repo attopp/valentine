@@ -22,3 +22,17 @@ This repo is configured for GitHub Pages using GitHub Actions (`.github/workflow
 5. Your site URL will be shown in the workflow output.
 
 If your repo does not use `main` or `master`, update the workflow branch list.
+
+## Spotify setup (full-song playback)
+
+This app can use Spotify Web Playback SDK to play the full track after clicking `Yes`.
+
+1. Create a `.env` file from `.env.example`.
+2. Set `VITE_SPOTIFY_CLIENT_ID` to your Spotify app client ID.
+3. Add redirect URI(s) in Spotify app settings:
+   - `https://attopp.github.io/valentine/` (production)
+   - `http://127.0.0.1:5173/` (local dev)
+4. In Spotify app settings, enable:
+   - `Web API`
+   - `Web Playback SDK`
+5. Add allowed users in Spotify dashboard while app is in development mode.

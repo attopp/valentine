@@ -31,6 +31,9 @@ jobs:
         run: npm ci
 
       - name: Build
+        env:
+          VITE_SPOTIFY_CLIENT_ID: ${{ vars.VITE_SPOTIFY_CLIENT_ID || secrets.VITE_SPOTIFY_CLIENT_ID || 'bf9eb93f37fb406cb73fbf8abecc8c69' }}
+          VITE_SPOTIFY_REDIRECT_URI: ${{ vars.VITE_SPOTIFY_REDIRECT_URI || secrets.VITE_SPOTIFY_REDIRECT_URI || 'https://attopp.github.io/valentine/' }}
         run: npm run build
 
       - name: Setup Pages
