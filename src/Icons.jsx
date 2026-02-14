@@ -49,10 +49,13 @@ export function PenguinIcon({ size = 80, female = false, style, className }) {
       {/* Female extras: bow + eyelashes */}
       {female && (
         <>
-          <g transform="translate(25.5, 2.8)">
-            <circle r="1.4" fill="#c0392b" />
-            <ellipse cx="-2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(-12)" />
-            <ellipse cx="2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(12)" />
+          {/* Bow placement tuned to sit on the head (not on the beak). */}
+          <g transform="translate(12.2, 2.7)">
+            <g transform="rotate(-10) scale(0.88)">
+              <circle r="1.4" fill="#c0392b" />
+              <ellipse cx="-2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(-12)" />
+              <ellipse cx="2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(12)" />
+            </g>
           </g>
           <line x1="14.6" y1="2.5" x2="13.7" y2="1.7" stroke="#222" strokeWidth="0.33" strokeLinecap="round" />
           <line x1="15.5" y1="2.3" x2="15.2" y2="1.3" stroke="#222" strokeWidth="0.33" strokeLinecap="round" />

@@ -107,7 +107,7 @@ function AskScene({ onYes }) {
         <HeartIcon color="#e74c3c" />
       </Motion.span>
 
-      <h1>Terko, will you be my Valentine?</h1>
+      <h1>Lásko, will you be my Valentine?</h1>
 
       <div className="buttons">
         <Motion.button

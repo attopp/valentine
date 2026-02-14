@@ -300,10 +300,59 @@ function HeavySnow() {
   );
 }
 
+function SparkleBurst() {
+  const sparkles = useMemo(
+    () => Array.from({ length: 9 }, (_, i) => {
+      const angle = (Math.PI * 2 * i) / 9 + (Math.random() * 0.35 - 0.175);
+      const dist = 18 + Math.random() * 16;
+      return {
+        id: i,
+        x: Math.cos(angle) * dist,
+        y: Math.sin(angle) * dist - 6,
+        size: 8 + Math.random() * 6,
+        delay: (i % 3) * 0.03,
+        rot: (Math.random() * 80 - 40),
+      };
+    }),
+    []
+  );
+
+  return (
+    <span className="sparkle-burst" aria-hidden="true">
+      {sparkles.map((s) => (
+        <Motion.span
+          key={s.id}
+          className="sparkle"
+          style={{
+            left: '50%',
+            top: '50%',
+            width: `${s.size}px`,
+            height: `${s.size}px`,
+            marginLeft: `${-s.size / 2}px`,
+            marginTop: `${-s.size / 2}px`,
+          }}
+          initial={{ x: 0, y: 0, opacity: 0, scale: 0, rotate: 0 }}
+          animate={{ x: s.x, y: s.y, opacity: [0, 1, 0], scale: [0, 1, 0.25], rotate: [0, s.rot] }}
+          transition={{ duration: 1.05, delay: s.delay, ease: 'easeOut' }}
+        >
+          <svg viewBox="0 0 20 20" width="100%" height="100%">
+            <path
+              d="M10 0 L12.2 7.8 L20 10 L12.2 12.2 L10 20 L7.8 12.2 L0 10 L7.8 7.8 Z"
+              fill="#ffeaa7"
+              opacity="0.9"
+            />
+          </svg>
+        </Motion.span>
+      ))}
+    </span>
+  );
+}
+
 export default function WalkScene({ spotify }) {
   const [stage, setStage] = useState(0);
   const [footprints, setFootprints] = useState([]);
   const [showCouple, setShowCouple] = useState(false);
+  const activeStep = stage >= 3 ? 3 : stage >= 2 ? 2 : 1;
 
   const coupleRef = useRef(null);
   const lastFootprintX = useRef(-999);
@@ -384,6 +433,19 @@ export default function WalkScene({ spotify }) {
       <Backdrop />
       <HeavySnow />
 
+      <Motion.div
+        className="walk-stepper"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.9, duration: 0.8 }}
+        aria-hidden="true"
+      >
+        <span className={`walk-step ${activeStep >= 1 ? 'is-on' : ''} ${activeStep === 1 ? 'is-active' : ''}`} />
+        <span className={`walk-step ${activeStep >= 2 ? 'is-on' : ''} ${activeStep === 2 ? 'is-active' : ''}`} />
+        <span className={`walk-step ${activeStep >= 3 ? 'is-on' : ''} ${activeStep === 3 ? 'is-active' : ''}`} />
+        <span className="walk-step-count">{activeStep}/3</span>
+      </Motion.div>
+
       {/* ── Front-view SVG penguins: walk in + kiss ── */}
       <AnimatePresence>
         {stage >= 1 && stage < 3 && (
@@ -409,7 +471,8 @@ export default function WalkScene({ spotify }) {
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.7 }}
                 >
-                  <HeartIcon color="#e74c3c" />
+                  <HeartIcon color="#e74c3c" size={44} />
+                  <SparkleBurst />
                 </Motion.span>
               )}
             </AnimatePresence>
