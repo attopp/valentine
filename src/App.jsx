@@ -11,6 +11,7 @@ import {
   getValidAccessToken,
   handleSpotifyAuthCallback,
   hasSpotifyConfig,
+  pausePlayback,
   transferAndPlayTrack,
 } from './spotify';
 import './App.css';
@@ -441,6 +442,31 @@ export default function App() {
     void startSpotifyPlayback({ fromUserGesture: true });
   };
 
+  const handleStopMusic = () => {
+    void (async () => {
+      try {
+        if (spotifyPlayerRef.current && typeof spotifyPlayerRef.current.pause === 'function') {
+          await spotifyPlayerRef.current.pause();
+        }
+      } catch {
+        // ignore SDK pause failures and still try Web API pause below
+      }
+
+      try {
+        await pausePlayback({ deviceId: spotifyDeviceIdRef.current || undefined });
+      } catch {
+        // ignore pause API errors; local player pause is usually enough
+      }
+
+      updateSpotifyUi({
+        status: 'paused',
+        message: 'Music paused.',
+        needsTap: true,
+        showLogin: false,
+      });
+    })();
+  };
+
   const handleConnectSpotify = () => {
     void requestSpotifyLogin();
   };
@@ -476,6 +502,8 @@ export default function App() {
                 showLogin: spotifyUi.showLogin,
                 onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,
                 onLogin: spotifyEnabled ? handleConnectSpotify : undefined,
+                onStop: spotifyEnabled ? handleStopMusic : undefined,
+                canStop: spotifyUi.status === 'playing',
                 track: trackInfo,
               }}
             />

@@ -469,6 +469,16 @@ export default function WalkScene({ spotify }) {
               Tap to start music
             </button>
           )}
+
+          {spotify?.canStop && (
+            <button
+              type="button"
+              className="spotify-action-btn spotify-stop-btn"
+              onClick={spotify.onStop}
+            >
+              Stop music
+            </button>
+          )}
         </div>
       </Motion.div>
     </div>

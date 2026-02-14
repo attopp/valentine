@@ -341,6 +341,12 @@
   box-shadow: 0 8px 20px rgba(0,0,0,0.33);
 }
 
+.spotify-stop-btn {
+  margin-left: 0.45rem;
+  color: #ffffff;
+  background: linear-gradient(135deg, #ff7a7a, #e74c3c);
+}
+
 @media (max-width: 900px) {
   .scene {
     padding: 1.35rem;
@@ -408,6 +414,10 @@
 
   .spotify-action-btn {
     width: auto;
+  }
+
+  .spotify-stop-btn {
+    margin-left: 0.35rem;
   }
 }
 

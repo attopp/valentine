@@ -417,6 +417,11 @@ export async function transferAndPlayTrack({ deviceId, trackUri }) {
   });
 }
 
+export async function pausePlayback({ deviceId } = {}) {
+  const query = deviceId ? `?device_id=${encodeURIComponent(deviceId)}` : '';
+  await spotifyApi(`/me/player/pause${query}`, { method: 'PUT' });
+}
+
 export async function fetchTrackDetails(trackId) {
   const payload = await spotifyApi(`/tracks/${encodeURIComponent(trackId)}`, {
     method: 'GET',
