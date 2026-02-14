@@ -138,6 +138,15 @@ function AskScene({ onYes }) {
 export default function App() {
   const [said, setSaid] = useState(false);
   const [burst, setBurst] = useState(false);
+  const isMobileDevice = useMemo(
+    () => (typeof navigator !== 'undefined'
+      ? /android|iphone|ipad|ipod|mobile/i.test(navigator.userAgent)
+      : false),
+    []
+  );
+  const mobileAuthHint = isMobileDevice
+    ? 'On mobile web, Spotify login opens in the browser by design.'
+    : '';
 
   const spotifyEnabled = hasSpotifyConfig();
   const [spotifyUi, setSpotifyUi] = useState(() => ({
@@ -498,6 +507,7 @@ export default function App() {
               spotify={{
                 status: spotifyUi.status,
                 message: spotifyUi.message,
+                authHint: mobileAuthHint,
                 needsTap: spotifyUi.needsTap,
                 showLogin: spotifyUi.showLogin,
                 onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,

@@ -137,11 +137,22 @@ function Backdrop() {
           <stop offset="55%" stopColor="#e67e22" stopOpacity="0.18" />
           <stop offset="100%" stopColor="#c0392b" stopOpacity="0" />
         </radialGradient>
-        <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#2c3e50" /><stop offset="100%" stopColor="#151d26" />
+        <linearGradient id="mFar" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#445f78" />
+          <stop offset="100%" stopColor="#212d39" />
         </linearGradient>
-        <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#384f63" /><stop offset="100%" stopColor="#24333f" />
+        <linearGradient id="mMid" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#354b61" />
+          <stop offset="100%" stopColor="#1c2833" />
+        </linearGradient>
+        <linearGradient id="mNear" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#2f4356" />
+          <stop offset="100%" stopColor="#121a22" />
+        </linearGradient>
+        <linearGradient id="ridgeLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#dfecf6" stopOpacity="0.1" />
+          <stop offset="50%" stopColor="#f7fbff" stopOpacity="0.42" />
+          <stop offset="100%" stopColor="#dfecf6" stopOpacity="0.12" />
         </linearGradient>
         <linearGradient id="snowG" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#dce5ec" />
@@ -175,20 +186,48 @@ function Backdrop() {
       <ellipse cx="480" cy="70" rx="90" ry="8" fill="#ffffff" opacity="0.035" />
       <ellipse cx="700" cy="110" rx="55" ry="5" fill="#ffffff" opacity="0.03" />
 
-      {/* Far mountains */}
-      <path d="M0,280 Q60,220 130,255 Q180,200 250,240 Q320,185 400,225 Q470,175 550,215 Q620,190 700,230 Q760,200 800,240 L800,500 L0,500Z" fill="url(#m2)" opacity="0.4" />
-      <path d="M320,185 L308,205 L332,205Z" fill="#b8c4cc" opacity="0.3" />
-      <path d="M470,175 L456,198 L484,198Z" fill="#b8c4cc" opacity="0.35" />
-      <path d="M700,230 L690,245 L710,245Z" fill="#b8c4cc" opacity="0.25" />
-      <path d="M180,200 L170,218 L190,218Z" fill="#b8c4cc" opacity="0.2" />
+      {/* Mountains: layered for extra depth */}
+      <path
+        d="M0,308 L62,256 L122,283 L186,222 L246,259 L308,206 L366,242 L432,194 L502,239 L566,206 L636,245 L704,216 L764,250 L800,236 L800,500 L0,500Z"
+        fill="url(#mFar)"
+        opacity="0.48"
+      />
+      <path
+        d="M-18,338 L76,268 L146,304 L232,236 L312,284 L396,223 L472,268 L558,229 L642,276 L724,238 L818,284 L818,500 L-18,500Z"
+        fill="url(#mMid)"
+        opacity="0.68"
+      />
+      <path
+        d="M-40,372 L76,282 L164,332 L260,244 L350,305 L440,232 L536,293 L630,248 L722,306 L830,264 L830,500 L-40,500Z"
+        fill="url(#mNear)"
+      />
+      <path
+        d="M-40,500 L-40,372 L76,282 L164,332 L260,244 L350,305 L440,232 L536,293 L630,248 L722,306 L830,264 L830,500Z"
+        fill="#0f171f"
+        opacity="0.2"
+      />
+      <path
+        d="M76,282 L164,332 L260,244 L350,305 L440,232 L536,293 L630,248 L722,306"
+        fill="none"
+        stroke="url(#ridgeLine)"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.5"
+      />
 
-      {/* Near mountains */}
-      <path d="M-30,340 Q50,250 140,295 Q220,230 320,280 Q400,225 480,270 Q560,230 650,275 Q730,240 810,290 L810,500 L-30,500Z" fill="url(#m1)" />
-      <path d="M50,250 L36,275 L64,275Z" fill="#cbd5db" opacity="0.45" />
-      <path d="M220,230 L204,258 L236,258Z" fill="#cbd5db" opacity="0.5" />
-      <path d="M400,225 L384,252 L416,252Z" fill="#cbd5db" opacity="0.45" />
-      <path d="M560,230 L546,255 L574,255Z" fill="#cbd5db" opacity="0.45" />
-      <path d="M730,240 L718,260 L742,260Z" fill="#cbd5db" opacity="0.4" />
+      {/* Snow caps */}
+      <Motion.g
+        animate={{ opacity: [0.35, 0.5, 0.35] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+      >
+        <path d="M258,244 L244,266 L272,266Z" fill="#d9e5ec" opacity="0.75" />
+        <path d="M440,232 L424,258 L456,258Z" fill="#dbe7ef" opacity="0.78" />
+        <path d="M76,282 L65,300 L87,300Z" fill="#d6e1e8" opacity="0.68" />
+        <path d="M630,248 L618,268 L642,268Z" fill="#d9e5ec" opacity="0.72" />
+        <path d="M186,222 L176,238 L196,238Z" fill="#cfdae2" opacity="0.54" />
+        <path d="M432,194 L422,211 L442,211Z" fill="#ced9e2" opacity="0.5" />
+      </Motion.g>
 
       {/* Horizon haze */}
       <rect x="0" y="280" width="800" height="60" fill="url(#haze)" />
@@ -449,6 +488,9 @@ export default function WalkScene({ spotify }) {
           </div>
 
           <p className="spotify-status">{spotify?.message || 'Connect Spotify to start music.'}</p>
+          {spotify?.showLogin && spotify?.authHint && (
+            <p className="spotify-hint">{spotify.authHint}</p>
+          )}
 
           {spotify?.showLogin && (
             <button

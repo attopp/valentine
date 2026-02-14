@@ -245,7 +245,7 @@
 
 .spotify-embed-wrap {
   position: absolute;
-  top: 0.95rem;
+  bottom: 0.95rem;
   right: 0.95rem;
   width: min(27vw, 300px);
   z-index: 25;
@@ -321,6 +321,13 @@
   line-height: 1.35;
 }
 
+.spotify-hint {
+  margin: 0.3rem 0 0;
+  color: #d1d9e8;
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
 .spotify-action-btn {
   margin-top: 0.6rem;
   padding: 0.5rem 0.9rem;
@@ -384,10 +391,10 @@
   }
 
   .spotify-embed-wrap {
-    top: calc(0.7rem + env(safe-area-inset-top));
+    top: auto;
     right: 0.7rem;
     left: auto;
-    bottom: auto;
+    bottom: calc(0.7rem + env(safe-area-inset-bottom));
     transform: none;
     width: min(72vw, 270px);
     text-align: left;
@@ -454,7 +461,8 @@
 
   .spotify-embed-wrap {
     width: min(76vw, 245px);
-    top: calc(0.55rem + env(safe-area-inset-top));
+    top: auto;
+    bottom: calc(0.55rem + env(safe-area-inset-bottom));
     right: 0.55rem;
   }
 }
