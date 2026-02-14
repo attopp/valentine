@@ -404,17 +404,31 @@ export async function transferAndPlayTrack({ deviceId, trackUri }) {
     throw makeError('No Spotify playback device is ready', 'DEVICE_NOT_READY');
   }
 
-  await spotifyApi('/me/player', {
-    method: 'PUT',
-    body: { device_ids: [deviceId], play: false },
-  });
+  // Play directly with device_id — simpler and more reliable than separate
+  // transfer-then-play. Retry with backoff because Spotify's backend may not
+  // have registered the device yet even though the SDK 'ready' event fired.
+  const maxRetries = 5;
+  let lastError;
 
-  await new Promise((resolve) => window.setTimeout(resolve, 240));
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      await spotifyApi(`/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
+        method: 'PUT',
+        body: { uris: [trackUri] },
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      const retryable = error.status === 404 || error.status === 502 || error.status === 504;
+      if (retryable && attempt < maxRetries - 1) {
+        await new Promise((r) => window.setTimeout(r, 1000 * (attempt + 1)));
+        continue;
+      }
+      throw error;
+    }
+  }
 
-  await spotifyApi(`/me/player/play?device_id=${encodeURIComponent(deviceId)}`, {
-    method: 'PUT',
-    body: { uris: [trackUri] },
-  });
+  throw lastError;
 }
 
 export async function playTrackOnActiveDevice({ trackUri }) {
@@ -422,12 +436,61 @@ export async function playTrackOnActiveDevice({ trackUri }) {
     throw makeError('Missing track uri', 'MISSING_TRACK_URI');
   }
 
-  // If the user already has an active device (typically the Spotify mobile app),
-  // this starts playback there without needing the Web Playback SDK.
-  await spotifyApi('/me/player/play', {
+  // 1. Try playing on the currently active device first.
+  try {
+    await spotifyApi('/me/player/play', {
+      method: 'PUT',
+      body: { uris: [trackUri] },
+    });
+    return;
+  } catch (activeError) {
+    // Only fall through to device discovery on 404 (no active device).
+    // Re-throw auth errors, premium errors, etc. immediately.
+    if (activeError.status !== 404) throw activeError;
+  }
+
+  // 2. No active device — fetch all available devices and pick one.
+  const devices = await getPlaybackDevices();
+  const target =
+    devices.find((d) => !d.is_restricted && d.type === 'Smartphone') ||
+    devices.find((d) => !d.is_restricted && d.type === 'Computer') ||
+    devices.find((d) => !d.is_restricted) ||
+    devices[0];
+
+  if (!target) {
+    throw makeError(
+      'No Spotify device available. Open the Spotify app and try again.',
+      'DEVICE_NOT_READY',
+      404
+    );
+  }
+
+  // 3. Transfer playback to the found device, then play with retries.
+  await spotifyApi('/me/player', {
     method: 'PUT',
-    body: { uris: [trackUri] },
+    body: { device_ids: [target.id], play: false },
   });
+
+  const maxRetries = 4;
+  let lastError;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    await new Promise((r) => window.setTimeout(r, 800 * (attempt + 1)));
+    try {
+      await spotifyApi(`/me/player/play?device_id=${encodeURIComponent(target.id)}`, {
+        method: 'PUT',
+        body: { uris: [trackUri] },
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      const retryable = error.status === 404 || error.status === 502 || error.status === 504;
+      if (retryable && attempt < maxRetries - 1) continue;
+      throw error;
+    }
+  }
+
+  throw lastError;
 }
 
 export async function getPlaybackDevices() {
