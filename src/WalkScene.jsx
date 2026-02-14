@@ -629,13 +629,9 @@ export default function WalkScene({ spotify }) {
           )}
 
           {spotify?.showOpenSpotify && (
-            <button
-              type="button"
-              className="spotify-action-btn"
-              onClick={spotify.onOpenSpotify}
-            >
+            <a className="spotify-action-btn" href={spotify.openSpotifyHref}>
               Otevřít Spotify
-            </button>
+            </a>
           )}
 
           {spotify?.canStop && (

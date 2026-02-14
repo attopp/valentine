@@ -27,6 +27,7 @@ const BURST_COLORS = ['#e74c3c', '#ff6b81', '#c0392b', '#e84393', '#fd79a8'];
 const SPOTIFY_TRACK_ID = '7gKxCvTDWwV9wBhdeBbr3l';
 const SPOTIFY_TRACK_URI = 'spotify:track:7gKxCvTDWwV9wBhdeBbr3l';
 const PENDING_SPOTIFY_KEY = 'valentine_pending_spotify_play';
+const MOBILE_SPOTIFY_RETURN_RETRY_KEY = 'valentine_mobile_spotify_return_retry';
 const DEFAULT_TRACK_INFO = {
   name: 'Nice To Each Other',
   artist: 'Olivia Dean',
@@ -344,9 +345,10 @@ export default function App() {
 
       // Common on mobile: no active device selected (user hasn't opened Spotify app yet).
       if (isMobileDevice) {
+        window.sessionStorage.setItem(MOBILE_SPOTIFY_RETURN_RETRY_KEY, '1');
         updateSpotifyUi({
           status: 'blocked',
-          message: 'Otevři Spotify aplikaci a spusť libovolnou skladbu. Pak se vrať a klepni na „Klepni pro spuštění hudby“.',
+          message: 'Otevři Spotify aplikaci (tlačítko níže), pusť cokoliv na 1 vteřinu a vrať se sem. Hudbu zkusím spustit znovu automaticky.',
           needsTap: true,
           showLogin: false,
           showOpenSpotify: true,
@@ -364,6 +366,38 @@ export default function App() {
       throw error;
     }
   }, [ensureSpotifyPlayer, isMobileDevice, spotifyEnabled, updateSpotifyUi, waitForSpotifyDevice]);
+
+  useEffect(() => {
+    if (!spotifyEnabled || !isMobileDevice) return undefined;
+
+    const tryResume = () => {
+      const shouldRetry = window.sessionStorage.getItem(MOBILE_SPOTIFY_RETURN_RETRY_KEY) === '1';
+      if (!shouldRetry) return;
+
+      void (async () => {
+        const token = await getValidAccessToken();
+        if (!token) return;
+        try {
+          await startSpotifyPlayback({ fromUserGesture: false });
+          window.sessionStorage.removeItem(MOBILE_SPOTIFY_RETURN_RETRY_KEY);
+        } catch {
+          // keep retry flag; user might not have started anything in Spotify yet
+        }
+      })();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') tryResume();
+    };
+
+    window.addEventListener('focus', tryResume);
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      window.removeEventListener('focus', tryResume);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [isMobileDevice, spotifyEnabled, startSpotifyPlayback]);
 
   useEffect(() => {
     if (!spotifyEnabled) return undefined;
@@ -476,26 +510,6 @@ export default function App() {
     void startSpotifyPlayback({ fromUserGesture: true });
   };
 
-  const handleOpenSpotifyApp = () => {
-    // Best-effort deep link to the Spotify app, with web fallback.
-    const deepLink = SPOTIFY_TRACK_URI;
-    const webLink = `https://open.spotify.com/track/${SPOTIFY_TRACK_ID}`;
-
-    try {
-      window.location.assign(deepLink);
-    } catch {
-      // ignore
-    }
-
-    window.setTimeout(() => {
-      try {
-        window.location.assign(webLink);
-      } catch {
-        // ignore
-      }
-    }, 700);
-  };
-
   const handleStopMusic = () => {
     void (async () => {
       try {
@@ -559,7 +573,7 @@ export default function App() {
                 showOpenSpotify: spotifyUi.showOpenSpotify,
                 onTapStart: spotifyEnabled ? handleTapToStartMusic : undefined,
                 onLogin: spotifyEnabled ? handleConnectSpotify : undefined,
-                onOpenSpotify: spotifyEnabled ? handleOpenSpotifyApp : undefined,
+                openSpotifyHref: SPOTIFY_TRACK_URI,
                 onStop: spotifyEnabled ? handleStopMusic : undefined,
                 canStop: spotifyUi.status === 'playing',
                 track: trackInfo,
