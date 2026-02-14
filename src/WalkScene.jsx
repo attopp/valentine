@@ -119,15 +119,37 @@ function Footprints({ prints }) {
 
 /* ── Backdrop: Antarctic landscape (nihilist penguin style) ── */
 function Backdrop() {
-  const stars = useMemo(() =>
-    Array.from({ length: 25 }, (_, i) => ({
-      x: (i * 37 + 20) % 800,
-      y: (i * 19 + 10) % 120,
-      d: 2 + (i % 4),
-      dl: (i * 0.9) % 5,
-    })),
-    []
-  );
+  const stars = useMemo(() => {
+    const count = 110;
+    const out = [];
+
+    for (let i = 0; i < count; i += 1) {
+      const x = Math.random() * 800;
+      // Bias stars toward the top of the sky for a more realistic night gradient.
+      const y = Math.pow(Math.random(), 1.85) * 190;
+      const bright = Math.random() < 0.12;
+      const r = bright ? 0.9 + Math.random() * 1.25 : 0.35 + Math.random() * 0.65;
+      const baseOpacity = bright ? 0.55 + Math.random() * 0.35 : 0.16 + Math.random() * 0.34;
+      const dur = (bright ? 2.6 : 4.2) + Math.random() * 6.5;
+      const delay = Math.random() * 6;
+      const tintRoll = Math.random();
+      const fill = tintRoll < 0.14 ? '#cfe9ff' : tintRoll < 0.28 ? '#ffe7b8' : '#ffffff';
+
+      out.push({
+        id: i,
+        x,
+        y,
+        r,
+        baseOpacity,
+        dur,
+        delay,
+        bright,
+        fill,
+      });
+    }
+
+    return out;
+  }, []);
 
   return (
     <svg className="backdrop-svg" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
@@ -173,6 +195,13 @@ function Backdrop() {
           <stop offset="0%" stopColor="#c4a070" stopOpacity="0.15" />
           <stop offset="100%" stopColor="#c4a070" stopOpacity="0" />
         </linearGradient>
+        <filter id="starGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="0.9" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
       </defs>
 
       {/* Sky */}
@@ -184,12 +213,25 @@ function Backdrop() {
       <circle cx="400" cy="290" r="26" fill="#fdd870" opacity="0.55" />
       <circle cx="400" cy="290" r="15" fill="#fff8e7" opacity="0.6" />
 
-      {/* Stars */}
-      {stars.map((s, i) => (
-        <Motion.circle key={i} cx={s.x} cy={s.y} r={1} fill="white"
-          animate={{ opacity: [0.1, 0.85, 0.1] }}
-          transition={{ duration: s.d, repeat: Infinity, delay: s.dl }}
-        />
+      {/* Star field */}
+      {stars.map((s) => (
+        <circle
+          key={s.id}
+          cx={s.x}
+          cy={s.y}
+          r={s.r}
+          fill={s.fill}
+          opacity={s.baseOpacity}
+          filter={s.bright ? 'url(#starGlow)' : undefined}
+        >
+          <animate
+            attributeName="opacity"
+            values={`${Math.max(0.04, s.baseOpacity * 0.35)};${s.baseOpacity};${Math.max(0.04, s.baseOpacity * 0.5)}`}
+            dur={`${s.dur}s`}
+            begin={`${s.delay}s`}
+            repeatCount="indefinite"
+          />
+        </circle>
       ))}
 
       {/* Wispy high clouds */}
