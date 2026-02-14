@@ -221,12 +221,12 @@ function Backdrop() {
         animate={{ opacity: [0.35, 0.5, 0.35] }}
         transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <path d="M258,244 L244,266 L272,266Z" fill="#d9e5ec" opacity="0.75" />
-        <path d="M440,232 L424,258 L456,258Z" fill="#dbe7ef" opacity="0.78" />
-        <path d="M76,282 L65,300 L87,300Z" fill="#d6e1e8" opacity="0.68" />
-        <path d="M630,248 L618,268 L642,268Z" fill="#d9e5ec" opacity="0.72" />
-        <path d="M186,222 L176,238 L196,238Z" fill="#cfdae2" opacity="0.54" />
-        <path d="M432,194 L422,211 L442,211Z" fill="#ced9e2" opacity="0.5" />
+        <path d="M244,265 Q258,248 272,265" fill="none" stroke="#e7f0f7" strokeWidth="1.6" strokeLinecap="round" opacity="0.65" />
+        <path d="M424,257 Q440,242 456,257" fill="none" stroke="#e9f2f8" strokeWidth="1.7" strokeLinecap="round" opacity="0.68" />
+        <path d="M64,299 Q76,286 88,299" fill="none" stroke="#e1ebf3" strokeWidth="1.4" strokeLinecap="round" opacity="0.58" />
+        <path d="M618,267 Q630,252 642,267" fill="none" stroke="#e7f0f7" strokeWidth="1.6" strokeLinecap="round" opacity="0.62" />
+        <path d="M176,238 Q186,227 196,238" fill="none" stroke="#dce7ef" strokeWidth="1.2" strokeLinecap="round" opacity="0.5" />
+        <path d="M422,211 Q432,199 442,211" fill="none" stroke="#dde8f0" strokeWidth="1.1" strokeLinecap="round" opacity="0.46" />
       </Motion.g>
 
       {/* Horizon haze */}
@@ -451,15 +451,15 @@ export default function WalkScene({ spotify }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.5, duration: 1.2 }}
         >
-          Yaaay!!
+          Jupí!!
         </Motion.h1>
         <Motion.p
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 2.5, duration: 1.2 }}
         >
-          I knew you'd say yes!<br />
-          Let's walk through life together — just you and me, forever.
+          Věděl jsem, že řekneš ano!<br />
+          Pojďme jít životem spolu - jen ty a já, napořád.
         </Motion.p>
       </div>
 
@@ -469,7 +469,6 @@ export default function WalkScene({ spotify }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 2.8, duration: 1.1 }}
       >
-        <p className="spotify-label">Spotify</p>
         <div className="spotify-card">
           <div className="spotify-track-head">
             {spotify?.track?.image ? (
@@ -487,7 +486,7 @@ export default function WalkScene({ spotify }) {
             </div>
           </div>
 
-          <p className="spotify-status">{spotify?.message || 'Connect Spotify to start music.'}</p>
+          <p className="spotify-status">{spotify?.message || 'Připoj Spotify pro spuštění hudby.'}</p>
           {spotify?.showLogin && spotify?.authHint && (
             <p className="spotify-hint">{spotify.authHint}</p>
           )}
@@ -498,7 +497,7 @@ export default function WalkScene({ spotify }) {
               className="spotify-action-btn"
               onClick={spotify.onLogin}
             >
-              Connect Spotify
+              Připojit Spotify
             </button>
           )}
 
@@ -508,7 +507,7 @@ export default function WalkScene({ spotify }) {
               className="spotify-action-btn"
               onClick={spotify.onTapStart}
             >
-              Tap to start music
+              Klepni pro spuštění hudby
             </button>
           )}
 
@@ -518,7 +517,7 @@ export default function WalkScene({ spotify }) {
               className="spotify-action-btn spotify-stop-btn"
               onClick={spotify.onStop}
             >
-              Stop music
+              Zastavit hudbu
             </button>
           )}
         </div>

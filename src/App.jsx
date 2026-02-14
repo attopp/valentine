@@ -17,9 +17,9 @@ import {
 import './App.css';
 
 const NO_TEXTS = [
-  'No', 'Nope!', 'Catch me!', 'Too slow!',
-  'Try again!', 'Hehe', 'Never!', "Can't touch this!",
-  'Just say YES!',
+  'Ne', 'Ani náhodou!', 'Chyť mě!', 'Moc pomalý!',
+  'Zkus to znovu!', 'Hehe', 'Nikdy!', 'Nemáš šanci!',
+  'Řekni jen ANO!',
 ];
 
 const BURST_COLORS = ['#e74c3c', '#ff6b81', '#c0392b', '#e84393', '#fd79a8'];
@@ -107,7 +107,7 @@ function AskScene({ onYes }) {
         <HeartIcon color="#e74c3c" />
       </Motion.span>
 
-      <h1>Will you be my Valentine?</h1>
+      <h1>Terezko, budeš moje Valentýnka?</h1>
 
       <div className="buttons">
         <Motion.button
@@ -118,7 +118,7 @@ function AskScene({ onYes }) {
           whileTap={{ scale: yesScale * 0.95 }}
           transition={{ type: 'spring', stiffness: 300 }}
         >
-          Yes!
+          Ano!
         </Motion.button>
 
         <Motion.button
@@ -145,15 +145,15 @@ export default function App() {
     []
   );
   const mobileAuthHint = isMobileDevice
-    ? 'On mobile web, Spotify login opens in the browser by design.'
+    ? 'Na mobilním webu se přihlášení Spotify otevírá v prohlížeči.'
     : '';
 
   const spotifyEnabled = hasSpotifyConfig();
   const [spotifyUi, setSpotifyUi] = useState(() => ({
     status: spotifyEnabled ? 'idle' : 'missing_config',
     message: spotifyEnabled
-      ? 'Music will start when you click Yes.'
-      : 'Spotify is not configured for this build.',
+      ? 'Hudba se spustí po kliknutí na Ano.'
+      : 'Spotify v této verzi není nastavené.',
     needsTap: false,
     showLogin: false,
   }));
@@ -201,7 +201,7 @@ export default function App() {
 
         if (Date.now() - started > 8000) {
           window.clearInterval(timerId);
-          reject(new Error('Timed out waiting for Spotify player device.'));
+          reject(new Error('Vypršel čas při čekání na zařízení Spotify přehrávače.'));
         }
       }, 120);
     });
@@ -214,7 +214,7 @@ export default function App() {
 
     updateSpotifyUi({
       status: 'connecting',
-      message: 'Connecting Spotify player...',
+      message: 'Připojuji Spotify přehrávač...',
       needsTap: false,
       showLogin: false,
     });
@@ -224,7 +224,7 @@ export default function App() {
         spotifyDeviceIdRef.current = deviceId;
         updateSpotifyUi({
           status: 'ready',
-          message: 'Spotify player is ready.',
+          message: 'Spotify přehrávač je připraven.',
           showLogin: false,
         });
       },
@@ -232,13 +232,13 @@ export default function App() {
         spotifyDeviceIdRef.current = '';
         updateSpotifyUi({
           status: 'connecting',
-          message: 'Reconnecting Spotify player...',
+          message: 'Znovu připojuji Spotify přehrávač...',
         });
       },
       onAutoplayFailed: () => {
         updateSpotifyUi({
           status: 'blocked',
-          message: 'Playback was blocked. Tap below to start music.',
+          message: 'Přehrávání bylo zablokováno. Klepni níže pro spuštění hudby.',
           needsTap: true,
         });
       },
@@ -246,7 +246,7 @@ export default function App() {
         if (/auth/i.test(message)) {
           updateSpotifyUi({
             status: 'needs_login',
-            message: 'Spotify login expired. Connect again to continue.',
+            message: 'Přihlášení ke Spotify vypršelo. Připoj ho znovu.',
             showLogin: true,
             needsTap: false,
           });
@@ -255,7 +255,7 @@ export default function App() {
 
         updateSpotifyUi({
           status: 'error',
-          message: message || 'Spotify playback failed.',
+          message: message || 'Přehrávání Spotify selhalo.',
           needsTap: true,
           showLogin: false,
         });
@@ -273,7 +273,7 @@ export default function App() {
 
     updateSpotifyUi({
       status: 'authorizing',
-      message: 'Opening Spotify login...',
+      message: 'Otevírám přihlášení Spotify...',
       needsTap: false,
       showLogin: false,
     });
@@ -287,7 +287,7 @@ export default function App() {
     try {
       updateSpotifyUi({
         status: 'connecting',
-        message: 'Starting Spotify playback...',
+        message: 'Spouštím přehrávání Spotify...',
         needsTap: false,
         showLogin: false,
       });
@@ -305,7 +305,7 @@ export default function App() {
 
       updateSpotifyUi({
         status: 'playing',
-        message: 'Playing Olivia Dean on Spotify.',
+        message: 'Přehrávám Olivia Dean na Spotify.',
         needsTap: false,
         showLogin: false,
       });
@@ -313,7 +313,7 @@ export default function App() {
       if (error?.code === 'AUTH_REQUIRED') {
         updateSpotifyUi({
           status: 'needs_login',
-          message: 'Connect Spotify to play the full track.',
+          message: 'Pro přehrání celé skladby připoj Spotify.',
           needsTap: false,
           showLogin: true,
         });
@@ -323,7 +323,7 @@ export default function App() {
       if (error?.code === 'PREMIUM_REQUIRED') {
         updateSpotifyUi({
           status: 'error',
-          message: 'Spotify Premium is required for full-song playback.',
+          message: 'Pro přehrání celé skladby je potřeba Spotify Premium.',
           needsTap: false,
           showLogin: false,
         });
@@ -332,7 +332,7 @@ export default function App() {
 
       updateSpotifyUi({
         status: 'blocked',
-        message: error?.message || 'Playback was blocked. Tap below to start music.',
+        message: error?.message || 'Přehrávání bylo zablokováno. Klepni níže pro spuštění hudby.',
         needsTap: true,
         showLogin: false,
       });
@@ -367,7 +367,7 @@ export default function App() {
         if (hasPendingPlay) {
           updateSpotifyUi({
             status: 'needs_login',
-            message: 'Connect Spotify to continue playback.',
+            message: 'Pro pokračování přehrávání připoj Spotify.',
             showLogin: true,
             needsTap: false,
           });
@@ -377,7 +377,7 @@ export default function App() {
 
       updateSpotifyUi({
         status: 'authorized',
-        message: 'Spotify connected.',
+        message: 'Spotify připojeno.',
         showLogin: false,
       });
       void loadSpotifyTrackInfo();
@@ -393,7 +393,7 @@ export default function App() {
         if (error?.code === 'AUTH_REQUIRED') {
           updateSpotifyUi({
             status: 'needs_login',
-            message: 'Connect Spotify again to continue.',
+            message: 'Pro pokračování připoj Spotify znovu.',
             showLogin: true,
             needsTap: false,
           });
@@ -469,7 +469,7 @@ export default function App() {
 
       updateSpotifyUi({
         status: 'paused',
-        message: 'Music paused.',
+        message: 'Hudba pozastavená.',
         needsTap: true,
         showLogin: false,
       });
