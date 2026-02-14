@@ -85,6 +85,10 @@ function Footprints({ prints }) {
   return (
     <div className="footprints-layer">
       {prints.map((p) => (
+        (() => {
+          const isLeft = p.id % 2 === 0;
+          const rotation = isLeft ? -18 : 18;
+          return (
         <Motion.div
           key={p.id}
           className="footprint"
@@ -93,14 +97,21 @@ function Footprints({ prints }) {
             bottom: `${p.bottom}%`,
           }}
           initial={{ opacity: 0, scale: 0.5 }}
-          animate={{ opacity: 0.3, scale: 1 }}
+          animate={{ opacity: 0.6, scale: 1, rotate: rotation }}
           transition={{ duration: 0.3 }}
         >
-          <svg width="16" height="8" viewBox="0 0 16 8">
-            <ellipse cx="4" cy="4" rx="3.5" ry="2.5" fill="#a0aab0" opacity="0.6" />
-            <ellipse cx="12" cy="4" rx="3.5" ry="2.5" fill="#a0aab0" opacity="0.6" />
+          <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+            <g transform={isLeft ? undefined : 'translate(18 0) scale(-1 1)'}>
+              <ellipse cx="9" cy="11.2" rx="4.9" ry="3.4" fill="#5c6872" opacity="0.8" />
+              <circle cx="6.2" cy="7.2" r="1.15" fill="#4f5a62" opacity="0.85" />
+              <circle cx="9" cy="6.5" r="1.25" fill="#4f5a62" opacity="0.88" />
+              <circle cx="11.8" cy="7.2" r="1.15" fill="#4f5a62" opacity="0.85" />
+              <ellipse cx="9" cy="13.3" rx="3.6" ry="2.1" fill="#4a545c" opacity="0.25" />
+            </g>
           </svg>
         </Motion.div>
+          );
+        })()
       ))}
     </div>
   );
@@ -412,9 +423,10 @@ export default function WalkScene({ spotify }) {
         lastFootprintX.current = x;
         const id = footprintId.current++;
         setFootprints(prev => {
+          const side = id % 2 === 0 ? -0.55 : 0.55;
           const next = [...prev, {
             id,
-            x: x - 1.5,
+            x: x - 1.5 + side,
             bottom: bottom - 1.2 + (id % 2 === 0 ? 0.3 : -0.3),
           }];
           return next.length > 28 ? next.slice(-28) : next;

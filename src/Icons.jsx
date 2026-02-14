@@ -50,8 +50,8 @@ export function PenguinIcon({ size = 80, female = false, style, className }) {
       {female && (
         <>
           {/* Bow placement tuned to sit on the head (not on the beak). */}
-          <g transform="translate(12.2, 2.7)">
-            <g transform="rotate(-10) scale(0.88)">
+          <g transform="translate(14.8, 1.9)">
+            <g transform="rotate(-16) scale(0.9)">
               <circle r="1.4" fill="#c0392b" />
               <ellipse cx="-2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(-12)" />
               <ellipse cx="2.3" cy="-0.8" rx="2.4" ry="1.5" fill="#e74c3c" transform="rotate(12)" />
